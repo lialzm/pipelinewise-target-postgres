@@ -365,7 +365,10 @@ class DbSync:
                 updates = 0
 
                 temp_table = self.table_name(stream_schema_message['stream'], is_temporary=True)
-                cur.execute(self.create_table_query(table_name=temp_table, is_temporary=True))
+                print('======')
+                table_sql=self.create_table_query(table_name=temp_table, is_temporary=True)
+                cur.execute(table_sql)
+                print('======')
 
                 copy_sql = "COPY {} ({}) FROM STDIN WITH (FORMAT CSV, ESCAPE '\\')".format(
                     temp_table,
