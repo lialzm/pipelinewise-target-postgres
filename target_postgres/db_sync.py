@@ -303,6 +303,12 @@ class DbSync:
             conn_string += " sslmode='require'"
 
         return psycopg2.connect(conn_string)
+    
+    def db_version(self):
+        res=self.query("""
+        SELECT current_setting('server_version_num')::integer;
+        """)
+        return res[0][0]
 
     def query(self, query, params=None):
         self.logger.debug("Running query: %s", query)
@@ -365,10 +371,8 @@ class DbSync:
                 updates = 0
 
                 temp_table = self.table_name(stream_schema_message['stream'], is_temporary=True)
-                print('======')
                 table_sql=self.create_table_query(table_name=temp_table, is_temporary=True)
                 cur.execute(table_sql)
-                print('======')
 
                 copy_sql = "COPY {} ({}) FROM STDIN WITH (FORMAT CSV, ESCAPE '\\')".format(
                     temp_table,
@@ -482,9 +486,23 @@ class DbSync:
         table_without_schema = self.table_name(stream, without_schema=True)
         index_name = 'i_{}_{}'.format(table_without_schema[:30].replace(' ', '').replace('"', ''),
                                       column.replace(',', '_'))
-        query = "CREATE INDEX IF NOT EXISTS {} ON {} ({})".format(index_name, table, column)
-        self.logger.info("Creating index on '%s' table on '%s' column(s)... %s", table, column, query)
-        self.query(query)
+        db_version=self.db_version()
+        if db_version>90500:
+            query = "CREATE INDEX IF NOT EXISTS {} ON {} ({})".format(index_name, table, column)
+            self.query(query)
+        else:
+            query= """
+            SELECT count(*) > 0
+            FROM pg_class c
+            WHERE c.relname = '{}' 
+            AND c.relkind = 'i';
+            """.format(index_name)
+            rs=self.query(query)
+            self.logger.info(rs)
+            if not rs[0][0]:
+                query = "CREATE INDEX {} ON {} ({})".format(index_name, table, column)
+                self.logger.info("Creating index on '%s' table on '%s' column(s)... %s", table, column, query)
+                self.query(query)
 
     def create_indices(self, stream):
         if isinstance(self.indices, list):
