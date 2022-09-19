@@ -355,7 +355,7 @@ class DbSync:
         return ','.join(
             [
                 json.dumps(flatten[name], ensure_ascii=False)
-                if name in flatten and (flatten[name] == 0 or flatten[name]) else ''
+                if name in flatten and (flatten[name] == 0 or flatten[name] or flatten[name]=='') else ''
                 for name in self.flatten_schema
             ]
         )

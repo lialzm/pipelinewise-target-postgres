@@ -102,7 +102,6 @@ def persist_lines(config, lines) -> None:
         except json.decoder.JSONDecodeError:
             LOGGER.error('Unable to parse:\n%s', line)
             raise
-
         if 'type' not in o:
             raise Exception("Line is missing required key 'type': {}".format(line))
         t = o['type']
