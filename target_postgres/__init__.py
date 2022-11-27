@@ -324,7 +324,7 @@ def load_stream_batch(stream, records_to_load, row_count, db_sync, delete_rows=F
         flush_records(stream, records_to_load, row_count[stream], db_sync, temp_dir)
 
     # Load finished, create indices if required
-    db_sync.create_indices(stream)
+    # db_sync.create_indices(stream)
 
     # Delete soft-deleted, flagged rows - where _sdc_deleted at is not null
     if delete_rows:
